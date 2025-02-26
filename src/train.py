@@ -3,27 +3,29 @@ import os
 import argparse
 import model_dispatcher
 import pandas as pd 
+from preprocessing import processing
+from sklearn.metrics import confusion_matrix
+from sklearn import metrics
 pd.set_option('future.no_silent_downcasting', True)
 
 def run(fold, model, test):
+    
     if test==True:
         train_df=pd.read_csv(config.Training_File)
         #train_df=df.drop("kfold", axis=1)
         valid_df=pd.read_csv(config.Test_File)
-        x_valid=valid_df.drop(["PassengerId"],axis=1)
 
     else:
-        df=pd.read_csv(config.Training_File)
+        df=pd.read_csv(config.Training_File_Folds)
         train_df=df[df.kfold!= fold].reset_index(drop=True)
         valid_df=df[df.kfold==fold].reset_index(drop=True)
-        x_valid=valid_df.drop(["Survived", "PassengerId", "kfold"],axis=1)
-        y_valid=valid_df.Survived.values
+        y_valid=valid_df.Transported.values
         
 
-    x_train=train_df.drop(["Survived", "PassengerId", "kfold"],axis=1)
+    x_train=train_df.drop(["Survived"],axis=1)
     y_train=train_df.Survived.values
 
-    x_train, x_valid= feature_work(x_train, x_valid)
+    x_train, x_valid= processing(x_train, x_valid)
 
     x_train, x_valid=x_train.values, x_valid.values
 
@@ -33,15 +35,7 @@ def run(fold, model, test):
 
     #use different proba for rf to improve precision
 
-    if model=='rf':
-        y_preds= clf.predict_proba(x_valid)[:,1]
-        threshold=0.43
-        preds=(y_preds>=threshold).astype(int)
-        
-
-
-    else:
-        preds=clf.predict(x_valid)
+    preds=clf.predict(x_valid)
 
     if test==False:
 

@@ -3,7 +3,7 @@ from sklearn.model_selection import StratifiedKFold
 import os
 import config
 
-def create_folds(data, num_folds=5):
+def create_folds(data, num_folds=8):
     """
     Creates stratified k-folds and adds a 'kfold' column to the dataframe
     
@@ -46,6 +46,6 @@ if __name__ == "__main__":
     # Create output directory if it doesn't exist
     os.makedirs("input", exist_ok=True)
     
-    # Save the new CSV with folds in the input folder
-    df_with_folds.to_csv(config.Training_File, index=False)
-    print(f"Created 5 folds and saved to input/train_folds.csv") 
+    # Save the new CSV with folds to the 'input' folder
+    df_with_folds.to_csv("input/train_folds.csv", index=False)
+    print(f"Created 8 folds and saved to input/train_folds.csv")

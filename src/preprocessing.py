@@ -7,10 +7,6 @@ from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.base import BaseEstimator, TransformerMixin
 
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.pipeline import Pipeline
-from sklearn.compose import ColumnTransformer
 
 #This script does all the preprocessing. It fills in the missing values 
 #and returns the complete Train and Test data
@@ -19,7 +15,6 @@ def name(X_train, X_test):
     X_train['Last_Name'] = X_train['Name'].str.split(' ').str[-1].fillna('Nobody')
     X_test['Last_Name'] = X_train['Name'].str.split(' ').str[-1].fillna('Nobody')
     return X_train, X_test
-
 
 class DataImputer(BaseEstimator, TransformerMixin):
     def __init__(self):
@@ -454,12 +449,13 @@ pipeline = Pipeline([
     # Add more preprocessing steps or a classifier
 ])
 
-drop_columns = ['PassengerId', 'Cabin', 'Name', 'Last_Name']  # Example columns to drop
+drop_columns = ['PassengerId', 'Cabin', 'Name', 'Last_Name', 'kfold']  # Example columns to drop
 
 drop_column_transformer = DropUnwantedColumns(columns_to_drop=drop_columns)
 
 
 def processing(X_train, X_test):
+    X_train, X_test= name(X_train, X_test)
     # Fit and transform on training data
     X_train = pipeline.fit_transform(X_train)
 
