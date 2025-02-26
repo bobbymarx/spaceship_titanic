@@ -13,3 +13,4 @@ models= {
     "rf": RandomForestClassifier(class_weight='balanced', random_state=42),
     "svc": SVC(C=1),
     "xgb": GradientBoostingClassifier(random_state=42)
+}
