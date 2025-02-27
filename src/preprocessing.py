@@ -6,6 +6,7 @@ from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.base import BaseEstimator, TransformerMixin
+from sklearn.preprocessing import OrdinalEncoder
 
 
 #This script does all the preprocessing. It fills in the missing values 
@@ -474,10 +475,18 @@ age_imputer = SimpleImputer(strategy='median')
 service_columns = ['RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck']
 preprocessor = ColumnTransformer(
     transformers=[
-        ('cat', OneHotEncoder(), ['cabin_deck']),  # One-hot encode 'cabin_deck'
+        ('cat', OneHotEncoder(), ['HomePlanet','Destination','cabin_deck']),  # One-hot encode categorical values
         ('num', StandardScaler(), service_columns),
-        ('age_imputer', age_imputer, ['Age'])  # Applies to 'Age' column  # Scale spending columns
-    ]
+        ('age_imputer', age_imputer, ['Age']),  # Applies to 'Age' column  # Scale spending columns
+        # Map binary/categorical columns to 0/1
+        ('binary_vip', OrdinalEncoder(categories=[[False, True]]), ['VIP']),
+        ('binary_is_family', OrdinalEncoder(categories=[[False, True]]), ['Is_family']),
+        ('binary_is_money', OrdinalEncoder(categories=[[False, True]]), ['Money_spent']),
+        ('binary_is_cyro', OrdinalEncoder(categories=[[False, True]]), ['CryoSleep']),
+        ('binary_cabin_side', OrdinalEncoder(categories=[['S', 'P']]), ['cabin_side']),
+        ('binary_gender', OrdinalEncoder(categories=[['Female', 'Male']]), ['Gender'])
+    ],
+    remainder='passthrough'
 )
 
 
@@ -490,7 +499,6 @@ pipeline = Pipeline([
     ('VIPImputer', KNNImputerVIP()),
     ('family_feature', FamilyFeatureEngineer()),
     ("Feature_engineering", FeatureEngineer())
-    #('Preprocessing', preprocessor)
 ])
 
 
@@ -515,14 +523,9 @@ def processing(X_train, X_test):
     X_train = drop_column_transformer.transform(X_train)
     X_test = drop_column_transformer.transform(X_test)
 
-    print("So sieht es aus am Ende aus: ", X_train.iloc[0])
-
     Pre=preprocessor
     X_train=Pre.fit_transform(X_train)
     X_test=Pre.transform(X_test)
-    print("After preprocessing: ", X_train[0])
-
-
 
     return X_train, X_test
 
