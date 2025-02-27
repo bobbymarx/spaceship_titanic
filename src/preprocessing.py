@@ -1,7 +1,7 @@
 import pandas as pd
 import numpy as np
 from sklearn.neighbors import KNeighborsClassifier
-from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.preprocessing import OneHotEncoder, StandardScaler, LabelEncoder
 from sklearn.pipeline import Pipeline
 from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
@@ -11,140 +11,180 @@ from sklearn.base import BaseEstimator, TransformerMixin
 #This script does all the preprocessing. It fills in the missing values 
 #and returns the complete Train and Test data
 
-def name(X_train, X_test):
-    X_train['Last_Name'] = X_train['Name'].str.split(' ').str[-1].fillna('Nobody')
-    X_test['Last_Name'] = X_train['Name'].str.split(' ').str[-1].fillna('Nobody')
-    return X_train, X_test
+def name(X):
+    X['Last_Name'] = X['Name'].str.split(' ').str[-1].fillna('Nobody')
+   
+    return X
 
-class DataImputer(BaseEstimator, TransformerMixin):
+class HomePlanetImputer(BaseEstimator, TransformerMixin):
     def __init__(self):
-        self.last_name_homeplanet_mapping = None
-        self.cabin_homeplanet_mapping = None
-        self.most_common_homeplanet = None
-        self.last_name_cabin_mapping = None
-        self.deck_stats = None
-        self.side_counts = None
-        self.median_spending_by_deck = None  # New attribute for spending pattern inference
+        # No hyperparameters in this simple example,
+        # but you could add a verbose flag or column name options here.
+        pass
+        
 
     def fit(self, X, y=None):
-        """
-        Learns mappings for filling missing HomePlanet, Cabin, and infers cabin_deck from spending.
-        """
-        X = X.copy()
+        # Work on a copy of X to avoid modifying the original data.
+        df = X.copy()
 
-        # Define spending-related service columns
-        service_columns = ['RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck']
-
-        # Learn Last_Name -> HomePlanet mapping
-        self.last_name_homeplanet_mapping = X[
-            (X['Last_Name'] != 'Nobody') & 
-            (~X['Last_Name'].isna()) & 
-            (~X['HomePlanet'].isna())
-        ].groupby('Last_Name')['HomePlanet'].first().to_dict()
-
-        # Learn Cabin -> HomePlanet mapping
-        self.cabin_homeplanet_mapping = X[
-            (~X['Cabin'].isna()) & 
-            (~X['HomePlanet'].isna())
-        ].groupby('Cabin')['HomePlanet'].first().to_dict()
-
-        # Determine the most common HomePlanet
-        self.most_common_homeplanet = X['HomePlanet'].mode()[0] if X['HomePlanet'].isna().sum() > 0 else None
-
-        # Learn Last_Name -> Cabin mapping
-        self.last_name_cabin_mapping = X[
-            (X['Last_Name'] != 'Nobody') & 
-            (~X['Last_Name'].isna()) & 
-            (~X['Cabin'].isna())
-        ].groupby('Last_Name')['Cabin'].first().to_dict()
-
-        # Split Cabin into components
-        X[['cabin_deck', 'cabin_num', 'cabin_side']] = X['Cabin'].str.split('/', expand=True)
-
-        # Convert cabin_num to numeric
-        X['cabin_num'] = pd.to_numeric(X['cabin_num'], errors='coerce')
-
-        # Learn cabin number distribution per deck
-        self.deck_stats = X.groupby('cabin_deck')['cabin_num'].agg(['min', 'max']).to_dict()
-
-        # Learn cabin side distribution per deck
-        self.side_counts = X.groupby(['cabin_deck', 'cabin_side']).size().unstack(fill_value=0).to_dict()
-
-        # Learn median spending by deck for inference
-        self.median_spending_by_deck = X.groupby('cabin_deck')[service_columns].median()
-
-        return self
-    
-    def transform(self, X):
-        """
-        Applies the learned mappings to fill missing HomePlanet, Cabin, and Cabin Deck in X_test.
-        """
-        X = X.copy()
+        # Create mapping for HomePlanet using Last_Name
+        # Exclude rows where Last_Name is 'Nobody' or missing, and where HomePlanet is missing.
+        self.known_last_name_mapping_ = (
+            df[(df['Last_Name'] != 'Nobody') &
+               (~df['Last_Name'].isna()) &
+               (~df['HomePlanet'].isna())]
+            .groupby('Last_Name')['HomePlanet']
+            .first()
+            .to_dict()
+        )
         
-        # Define spending-related service columns
+        # Create mapping for HomePlanet using Cabin where HomePlanet is known.
+        self.known_cabin_mapping_ = (
+            df[(~df['Cabin'].isna()) &
+               (~df['HomePlanet'].isna())]
+            .groupby('Cabin')['HomePlanet']
+            .first()
+            .to_dict()
+        )
+        
+        # Determine the most common HomePlanet in the training data.
+        # This will be used as the final fallback.
+        mode_series = df['HomePlanet'].mode()
+        self.most_common_homeplanet_ = mode_series[0] if not mode_series.empty else None
+        
+        return self
+
+    def transform(self, X):
+        # Create a copy so that the original DataFrame is not modified.
+        df = X.copy()
+
+        # Step 1: Fill missing HomePlanet based on Last_Name mapping.
+        def fill_by_last_name(row):
+            if pd.isna(row['HomePlanet']) and pd.notna(row['Last_Name']):
+                if row['Last_Name'] != 'Nobody':
+                    return self.known_last_name_mapping_.get(row['Last_Name'], row['HomePlanet'])
+            return row['HomePlanet']
+        
+        df['HomePlanet'] = df.apply(fill_by_last_name, axis=1)
+        
+        # Step 2: Fill remaining missing HomePlanet based on Cabin mapping.
+        def fill_by_cabin(row):
+            if pd.isna(row['HomePlanet']) and pd.notna(row['Cabin']):
+                return self.known_cabin_mapping_.get(row['Cabin'], row['HomePlanet'])
+            return row['HomePlanet']
+        
+        df['HomePlanet'] = df.apply(fill_by_cabin, axis=1)
+        
+        # Step 3: Fill any still missing HomePlanet values with the most common HomePlanet.
+        df['HomePlanet'] = df['HomePlanet'].fillna(self.most_common_homeplanet_)
+        
+        return df
+
+class CabinImputer(BaseEstimator, TransformerMixin):
+    def __init__(self):
+        # You can add a random_state parameter here if reproducibility is needed.
+        pass
+
+    def fit(self, X, y=None):
+        df = X.copy()
         service_columns = ['RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck']
-
-        # Fill missing HomePlanet based on Last_Name
-        X['HomePlanet'] = X.apply(
-            lambda row: self.last_name_homeplanet_mapping.get(row['Last_Name'], row['HomePlanet'])
-            if pd.isna(row['HomePlanet']) else row['HomePlanet'], axis=1
+        
+        # Step 1: Build a Last_Name -> Cabin mapping (ignoring 'Nobody' and NaN values)
+        self.known_lastname_mapping_ = (
+            df[(df['Last_Name'] != 'Nobody') & 
+               (~df['Last_Name'].isna()) & 
+               (~df['Cabin'].isna())]
+            .groupby('Last_Name')['Cabin']
+            .first()
+            .to_dict()
         )
-
-        # Fill missing HomePlanet based on Cabin
-        X['HomePlanet'] = X.apply(
-            lambda row: self.cabin_homeplanet_mapping.get(row['Cabin'], row['HomePlanet'])
-            if pd.isna(row['HomePlanet']) else row['HomePlanet'], axis=1
+        
+        # Fill missing Cabin using Last_Name mapping
+        def fill_by_lastname(row):
+            if pd.isna(row['Cabin']) and row['Last_Name'] != 'Nobody':
+                return self.known_lastname_mapping_.get(row['Last_Name'])
+            return row['Cabin']
+        df['Cabin'] = df.apply(fill_by_lastname, axis=1)
+        
+        # Step 2: Split Cabin into deck, number, and side.
+        cabin_split = df['Cabin'].str.split('/', expand=True)
+        df['cabin_deck'] = cabin_split[0]
+        df['cabin_num'] = cabin_split[1]
+        df['cabin_side'] = cabin_split[2]
+        
+        # Step 3: Compute median spending per cabin_deck (for inferring missing deck)
+        self.median_spending_by_deck_ = (
+            df.groupby('cabin_deck')[service_columns]
+            .median()
         )
+        
+        # Step 4: Compute deck statistics for cabin_num (min and max per deck)
+        df['cabin_num'] = pd.to_numeric(df['cabin_num'], errors='coerce')
+        deck_stats = df.groupby('cabin_deck')['cabin_num'].agg(['min', 'max'])
+        self.deck_stats_ = deck_stats.to_dict(orient='index')
+        
+        # Step 5: Compute the minority cabin side per deck
+        side_counts = df.groupby(['cabin_deck', 'cabin_side']).size().unstack(fill_value=0)
+        minority_side = {}
+        for deck in side_counts.index:
+            count_s = side_counts.loc[deck].get('S', 0)
+            count_p = side_counts.loc[deck].get('P', 0)
+            # Choose 'S' if S count is less than P; otherwise 'P'
+            minority_side[deck] = 'S' if count_s < count_p else 'P'
+        self.minority_side_by_deck_ = minority_side
+        
+        return self
 
-        # Fill remaining missing HomePlanet with the most common one
-        if self.most_common_homeplanet:
-            X['HomePlanet'].fillna(self.most_common_homeplanet, inplace=True)
-
-        # Fill missing Cabin based on Last_Name
-        X['Cabin'] = X.apply(
-            lambda row: self.last_name_cabin_mapping.get(row['Last_Name'], row['Cabin'])
-            if pd.isna(row['Cabin']) else row['Cabin'], axis=1
-        )
-
-        # Split Cabin into components
-        X[['cabin_deck', 'cabin_num', 'cabin_side']] = X['Cabin'].str.split('/', expand=True)
-
-        # Convert cabin_num to numeric
-        X['cabin_num'] = pd.to_numeric(X['cabin_num'], errors='coerce')
-
-        # **NEW: Infer missing cabin_deck based on spending similarity**
-        def infer_cabin_deck(row):
+    def transform(self, X):
+        df = X.copy()
+        service_columns = ['RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck']
+        
+        # Step 1: Fill Cabin using the learned Last_Name mapping.
+        def fill_by_lastname(row):
+            if pd.isna(row['Cabin']) and row['Last_Name'] != 'Nobody':
+                return self.known_lastname_mapping_.get(row['Last_Name'], row['Cabin'])
+            return row['Cabin']
+        df['Cabin'] = df.apply(fill_by_lastname, axis=1)
+        
+        # Step 2: Split Cabin into its components.
+        cabin_split = df['Cabin'].str.split('/', expand=True)
+        df['cabin_deck'] = cabin_split[0]
+        df['cabin_num'] = cabin_split[1]
+        df['cabin_side'] = cabin_split[2]
+        
+        # Step 3: Infer missing cabin_deck based on spending patterns.
+        def infer_deck(row):
             if pd.isna(row['cabin_deck']):
                 distances = {}
-                for deck, median_spending in self.median_spending_by_deck.iterrows():
-                    distance = np.linalg.norm(row[service_columns].fillna(0) - median_spending.fillna(0))
-                    distances[deck] = distance
-                return min(distances, key=distances.get)
+                for deck, medians in self.median_spending_by_deck_.iterrows():
+                    passenger_spending = row[service_columns].fillna(0)
+                    medians_filled = medians.fillna(0)
+                    distances[deck] = np.linalg.norm(passenger_spending - medians_filled)
+                if distances:
+                    return min(distances, key=distances.get)
             return row['cabin_deck']
+        df['cabin_deck'] = df.apply(infer_deck, axis=1)
         
-        X['cabin_deck'] = X.apply(infer_cabin_deck, axis=1)
-
-        # Assign random cabin_num within the deck range
-        def random_cabin_num(row):
-            deck = row['cabin_deck']
-            if pd.isna(row['cabin_num']) and deck in self.deck_stats['min']:
-                return np.random.randint(self.deck_stats['min'][deck], self.deck_stats['max'][deck] + 1)
+        # Step 4: Fill missing cabin_num by assigning a random number within the deck's range.
+        df['cabin_num'] = pd.to_numeric(df['cabin_num'], errors='coerce')
+        def assign_cabin_num(row):
+            if pd.isna(row['cabin_num']):
+                deck = row['cabin_deck']
+                stats = self.deck_stats_.get(deck, None)
+                if stats is not None and pd.notna(stats.get('min')) and pd.notna(stats.get('max')):
+                    return np.random.randint(int(stats.get('min')), int(stats.get('max')) + 1)
             return row['cabin_num']
+        df['cabin_num'] = df.apply(assign_cabin_num, axis=1)
         
-        X['cabin_num'] = X.apply(random_cabin_num, axis=1)
-
-        # Assign minority side to cabins
-        def get_minority_side(deck):
-            if deck not in self.side_counts:
-                return np.random.choice(['S', 'P'])
-            return 'S' if self.side_counts[deck].get('S', 0) < self.side_counts[deck].get('P', 0) else 'P'
-
-        X['cabin_side'] = X.apply(
-            lambda row: get_minority_side(row['cabin_deck']) if pd.isna(row['cabin_side']) else row['cabin_side'],
-            axis=1
-        )
-
-        return X
+        # Step 5: Fill missing cabin_side using the minority side per deck.
+        def assign_cabin_side(row):
+            if pd.isna(row['cabin_side']):
+                deck = row['cabin_deck']
+                return self.minority_side_by_deck_.get(deck, np.random.choice(['S', 'P']))
+            return row['cabin_side']
+        df['cabin_side'] = df.apply(assign_cabin_side, axis=1)
+        
+        return df
 
 class CryoSleepImputer(BaseEstimator, TransformerMixin):
     def __init__(self):
@@ -439,8 +479,10 @@ preprocessor = ColumnTransformer(
     ]
 )
 
+"""
 pipeline = Pipeline([
-    ('data_imputer', DataImputer()),
+    ('home_planet_imputer', HomePlanetImputer()),
+    ('Cabin_Imputer', CabinImputer()),
     ('cryosleep_imputer', CryoSleepImputer()),
     ('spending_imputer', SpendingImputer()),
     ('destination_imputer', DestinationImputer()),
@@ -448,6 +490,17 @@ pipeline = Pipeline([
     ('VIPImputer', KNNImputerVIP())
     # Add more preprocessing steps or a classifier
 ])
+"""
+pipeline = Pipeline([
+    ('home_planet_imputer', HomePlanetImputer()),
+    ('Cabin_Imputer', CabinImputer()),
+    ('cryosleep_imputer', CryoSleepImputer()),
+    ('spending_imputer', SpendingImputer())
+
+
+])
+
+
 
 drop_columns = ['PassengerId', 'Cabin', 'Name', 'Last_Name', 'kfold']  # Example columns to drop
 
@@ -455,12 +508,29 @@ drop_column_transformer = DropUnwantedColumns(columns_to_drop=drop_columns)
 
 
 def processing(X_train, X_test):
-    X_train, X_test= name(X_train, X_test)
+    X_train= name(X_train) #fill names
+    X_test= name(X_test) #fill names
     # Fit and transform on training data
-    X_train = pipeline.fit_transform(X_train)
+
+    
+    pipeline.fit(X_train)
+    X_train = pipeline.transform(X_train)
 
     # Apply transformations to test data 
     X_test = pipeline.transform(X_test)
+
+
+    Imputer=DestinationImputer()
+    X_train=Imputer.fit_transform(X_train)
+    X_test=Imputer.transform(X_test)
+
+    print("SUCCCCCESSSS")
+
+    Imputer2=age_imputer
+    X_train=Imputer2.fit_transform(X_train)
+    X_test=Imputer2.transform(X_test)
+
+    """
 
     # Apply feature engineering for family-related data
     family_feature_engineer = FamilyFeatureEngineer()
@@ -475,7 +545,8 @@ def processing(X_train, X_test):
     # Drop unwanted columns from both train and test data
     X_train = drop_column_transformer.transform(X_train)
     X_test = drop_column_transformer.transform(X_test)
-
+    """
+    print("SUCCESS")
     return X_train, X_test
 
 

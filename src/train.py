@@ -14,16 +14,19 @@ def run(fold, model, test):
         train_df=pd.read_csv(config.Training_File)
         #train_df=df.drop("kfold", axis=1)
         valid_df=pd.read_csv(config.Test_File)
+        x_valid=valid_df
 
     else:
         df=pd.read_csv(config.Training_File_Folds)
         train_df=df[df.kfold!= fold].reset_index(drop=True)
         valid_df=df[df.kfold==fold].reset_index(drop=True)
         y_valid=valid_df.Transported.values
+        x_valid=valid_df.drop(["Transported"],axis=1)
         
 
-    x_train=train_df.drop(["Survived"],axis=1)
-    y_train=train_df.Survived.values
+    x_train=train_df.drop(["Transported"],axis=1)
+    y_train=train_df.Transported.values
+    
 
     x_train, x_valid= processing(x_train, x_valid)
 
