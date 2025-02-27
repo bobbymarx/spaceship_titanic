@@ -475,31 +475,23 @@ service_columns = ['RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck']
 preprocessor = ColumnTransformer(
     transformers=[
         ('cat', OneHotEncoder(), ['cabin_deck']),  # One-hot encode 'cabin_deck'
-        ('num', StandardScaler(), service_columns)  # Scale spending columns
+        ('num', StandardScaler(), service_columns),
+        ('age_imputer', age_imputer, ['Age'])  # Applies to 'Age' column  # Scale spending columns
     ]
 )
 
-"""
+
 pipeline = Pipeline([
     ('home_planet_imputer', HomePlanetImputer()),
     ('Cabin_Imputer', CabinImputer()),
     ('cryosleep_imputer', CryoSleepImputer()),
     ('spending_imputer', SpendingImputer()),
     ('destination_imputer', DestinationImputer()),
-    ('age_imputer', age_imputer),
-    ('VIPImputer', KNNImputerVIP())
-    # Add more preprocessing steps or a classifier
+    ('VIPImputer', KNNImputerVIP()),
+    ('family_feature', FamilyFeatureEngineer()),
+    ("Feature_engineering", FeatureEngineer())
+    #('Preprocessing', preprocessor)
 ])
-"""
-pipeline = Pipeline([
-    ('home_planet_imputer', HomePlanetImputer()),
-    ('Cabin_Imputer', CabinImputer()),
-    ('cryosleep_imputer', CryoSleepImputer()),
-    ('spending_imputer', SpendingImputer())
-
-
-])
-
 
 
 drop_columns = ['PassengerId', 'Cabin', 'Name', 'Last_Name', 'kfold']  # Example columns to drop
@@ -512,7 +504,6 @@ def processing(X_train, X_test):
     X_test= name(X_test) #fill names
     # Fit and transform on training data
 
-    
     pipeline.fit(X_train)
     X_train = pipeline.transform(X_train)
 
@@ -520,33 +511,19 @@ def processing(X_train, X_test):
     X_test = pipeline.transform(X_test)
 
 
-    Imputer=DestinationImputer()
-    X_train=Imputer.fit_transform(X_train)
-    X_test=Imputer.transform(X_test)
-
-    print("SUCCCCCESSSS")
-
-    Imputer2=age_imputer
-    X_train=Imputer2.fit_transform(X_train)
-    X_test=Imputer2.transform(X_test)
-
-    """
-
-    # Apply feature engineering for family-related data
-    family_feature_engineer = FamilyFeatureEngineer()
-    X_train = family_feature_engineer.fit_transform(X_train)
-    X_test = family_feature_engineer.transform(X_test)
-
-    # Apply custom feature engineering for gender and spending
-    feature_engineer = FeatureEngineer()
-    X_train = feature_engineer.fit_transform(X_train)
-    X_test = feature_engineer.transform(X_test)
-
     # Drop unwanted columns from both train and test data
     X_train = drop_column_transformer.transform(X_train)
     X_test = drop_column_transformer.transform(X_test)
-    """
-    print("SUCCESS")
+
+    print("So sieht es aus am Ende aus: ", X_train.iloc[0])
+
+    Pre=preprocessor
+    X_train=Pre.fit_transform(X_train)
+    X_test=Pre.transform(X_test)
+    print("After preprocessing: ", X_train[0])
+
+
+
     return X_train, X_test
 
 
