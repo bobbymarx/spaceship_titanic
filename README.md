@@ -36,6 +36,7 @@ with Logistic Regression as the meta-learner achieving an Accuracy of 80.6% on t
 
 ## Project Structure
 
+```bash
 spaceship_titanic/
 ├── input/ # Data directory
 │ ├── train.csv # Training dataset
@@ -54,6 +55,7 @@ spaceship_titanic/
 │ └── predictions.csv # Final predictions on test set
 ├── requirements.txt # Python dependencies
 └── README.md # Project documentation
+```
 
 
 ### Key Components Explained
