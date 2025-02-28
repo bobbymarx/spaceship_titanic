@@ -11,6 +11,9 @@ from catboost import CatBoostClassifier
 from sklearn.discriminant_analysis import LinearDiscriminantAnalysis
 from sklearn.neural_network import BernoulliRBM
 from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import VotingClassifier
+from sklearn.ensemble import StackingClassifier
+from sklearn.linear_model import LogisticRegression
 
 
 
@@ -175,6 +178,134 @@ models= {
                                     border_count=128,
                                     depth=4,
                                     iterations=500,
-                                    l2_leaf_reg=10)
+                                    l2_leaf_reg=10),
+
+    #combining the best performing models
+
+    "ensemble_model_soft": VotingClassifier(
+    estimators=[
+        ('catboost', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=128,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=10)),
+        ('xgb', GradientBoostingClassifier(random_state=42, ccp_alpha=0, learning_rate=0.1,
+                                       max_depth=3, 
+                                       n_estimators=300)),
+        ('rf', RandomForestClassifier(class_weight='balanced', random_state=42, 
+                                 max_depth=20,
+                                 max_features='sqrt',
+                                 min_samples_leaf=4,
+                                 min_samples_split=2,
+                                 n_estimators=200
+                                 ))
+    ],
+    voting='soft'  # using soft voting to average predicted probabilities
+        ),
+"ensemble_model_hard": VotingClassifier(
+    estimators=[
+        ('catboost', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=128,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=10)),
+        ('xgb', GradientBoostingClassifier(random_state=42, ccp_alpha=0, learning_rate=0.1,
+                                       max_depth=3, 
+                                       n_estimators=300)),
+        ('rf', RandomForestClassifier(class_weight='balanced', random_state=42, 
+                                 max_depth=20,
+                                 max_features='sqrt',
+                                 min_samples_leaf=4,
+                                 min_samples_split=2,
+                                 n_estimators=200
+                                 ))
+    ],
+    voting='hard'  # using soft voting to average predicted probabilities
+),
+
+"ensemble_catboost_soft": VotingClassifier(
+    estimators=[
+        ('cb1', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=128,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=10)),
+        ('cb2', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=64,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=5)),
+        ('cb3', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=128,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=3))
+    ],
+    voting='soft'  # soft voting to combine probabilities
+),
+"ensemble_catboost_hard": VotingClassifier(
+    estimators=[
+        ('cb1', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=128,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=10)),
+        ('cb2', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=64,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=5)),
+        ('cb3', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=128,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=3))
+    ],
+    voting='hard'  # soft voting to combine probabilities
+),
+
+"Stack_ensemble_model": StackingClassifier(
+    estimators=[
+        ('catboost', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=128,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=10)),
+        ('xgb', GradientBoostingClassifier(random_state=42, ccp_alpha=0, learning_rate=0.1,
+                                       max_depth=3, 
+                                       n_estimators=300)),
+        ('rf', RandomForestClassifier(class_weight='balanced', random_state=42, 
+                                 max_depth=20,
+                                 max_features='sqrt',
+                                 min_samples_leaf=4,
+                                 min_samples_split=2,
+                                 n_estimators=200
+                                 ))
+    ],
+    final_estimator=LogisticRegression(),
+    cv=5 
+),
+
+"Stack_ensemble_catboost": StackingClassifier(
+    estimators=[
+        ('cb1', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=128,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=10)),
+        ('cb2', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=64,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=5)),
+        ('cb3', CatBoostClassifier(learning_rate=0.05, logging_level='Silent', random_seed=42, bagging_temperature=0,
+                                    border_count=128,
+                                    depth=4,
+                                    iterations=500,
+                                    l2_leaf_reg=3))
+    ],
+    final_estimator=LogisticRegression(),
+    cv=5 
+)
 
 }
