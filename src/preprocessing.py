@@ -357,24 +357,20 @@ class KNNImputerVIP(BaseEstimator, TransformerMixin):
         """
         Impute missing 'VIP' labels in rows where 'VIP' is NaN
         """
-        # Ensure we're not modifying the original DataFrame
         X_copy = X.copy()
+    
+        # Create a mask for rows with missing 'VIP'
+        na_vip_mask = X_copy['VIP'].isna()
         
-        # Extract rows with missing VIP status (target)
-        test_df = X_copy[X_copy['VIP'].isna()]
-        
-        # Prepare the features (same as in fit)
+        # Prepare features (same as in fit)
         service_columns = ['RoomService', 'FoodCourt', 'ShoppingMall', 'Spa', 'VRDeck']
         features = ['cabin_deck'] + service_columns
         
-        # Get the missing VIP rows for prediction
-        X_test = test_df[features]
+        # Get the subset of data for prediction
+        X_test = X_copy.loc[na_vip_mask, features]
         
-        # Predict missing VIP values
-        test_df['VIP'] = self.pipeline.predict(X_test)
-        
-        # Update the original DataFrame with predicted VIP labels
-        X_copy.loc[test_df.index, 'VIP'] = test_df['VIP']
+        # Predict and assign directly to X_copy using .loc
+        X_copy.loc[na_vip_mask, 'VIP'] = self.pipeline.predict(X_test)
         
         return X_copy
 

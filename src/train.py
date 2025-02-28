@@ -30,8 +30,6 @@ def run(fold, model, test):
 
     x_train, x_valid= processing(x_train, x_valid)
 
-    x_train, x_valid=x_train.values, x_valid.values
-
     clf=model_dispatcher.models[model]
 
     clf.fit(x_train,y_train)
@@ -45,7 +43,7 @@ def run(fold, model, test):
         accuracy=metrics.accuracy_score(y_valid,preds)
 
         print(f"Fold={fold},Accuracy={accuracy}")
-        print(confusion_matrix(y_valid,preds))
+        #print(confusion_matrix(y_valid,preds))
 
         counter=0
         for runner in range(len(y_valid)):
@@ -53,7 +51,7 @@ def run(fold, model, test):
                 if preds[runner]==0:
                     counter+=1
         
-        print(counter)
+        #print(counter)
 
         #joblib.dump(clf,
         #            os.path.join(config.Model_Output, f"{model}_{fold}.bin"))
