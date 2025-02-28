@@ -1,20 +1,38 @@
-# Spaceship Titanic - Kaggle Competition
+# Spaceship Titanic Prediction
 
-![Spaceship Titanic](https://storage.googleapis.com/kaggle-competitions/kaggle/36238/logos/header.png?t=2022-06-23-19-57-45)
+## Project Overview
+This project tackles the Kaggle competition "Spaceship Titanic", achieving a public accuracy score of 80.6% using an ensemble stacking approach with CatBoost, XGBoost, and Random Forest models.
 
-## Overview
+## Problem Description
+The Spaceship Titanic was an interstellar passenger liner launched a month ago. With almost 13,000 passengers on board, the vessel set out on its maiden voyage transporting emigrants from our solar system to three newly habitable exoplanets orbiting nearby stars. While rounding Alpha Centauri en route to its first destination—the torrid 55 Cancri E—the unwary vessel collided with a spacetime anomaly hidden within a dust cloud. Though the ship stayed intact, almost half of the passengers were transported to an alternate dimension!
 
-This repository contains my solution to the **Spaceship Titanic** Kaggle competition. The goal of this competition is to predict whether a passenger was transported to an alternate dimension during the Spaceship Titanic's collision with the spacetime anomaly. The dataset provided includes information about the passengers, such as their cabin, age, destination, and more.
+## Solution Approach
 
-### Competition Link
-[Spaceship Titanic on Kaggle](https://www.kaggle.com/competitions/spaceship-titanic)
+### Data Preprocessing
+- **Missing Value Imputation**:
+  - HomePlanet: Imputed based on Last Name and Cabin patterns
+  - Cabin: Imputed using Last Name mapping and spending patterns
+  - CryoSleep: Inferred from spending behavior
+  - VIP Status: Predicted using KNN based on cabin and spending features
+  - Destination: Filled using family patterns and HomePlanet probabilities
 
-### Dataset
-The dataset can be downloaded from the competition page:
-- [Train Data](https://www.kaggle.com/competitions/spaceship-titanic/data?select=train.csv)
-- [Test Data](https://www.kaggle.com/competitions/spaceship-titanic/data?select=test.csv)
+### Feature Engineering
+- Created family-related features based on Last Name and Cabin
+- Generated gender predictions from passenger names
+- Engineered spending-related features
+- Split Cabin information into deck, number, and side
 
----
+### Model Pipeline
+1. **Data Preprocessing**: Comprehensive pipeline handling missing values and feature engineering
+2. **Feature Encoding**: Mix of One-Hot Encoding for categorical variables and Standard Scaling for numeric features
+3. **Model Selection**: Implemented Grid and Random Search for hyperparameter tuning
+
+### Best Performing Model
+Stacking Ensemble combining:
+- CatBoost Classifier
+- XGBoost Classifier
+- Random Forest Classifier
+with Logistic Regression as the meta-learner
 
 ## Project Structure
 spaceship-titanic/
