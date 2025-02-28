@@ -32,50 +32,53 @@ Stacking Ensemble combining:
 - CatBoost Classifier
 - XGBoost Classifier
 - Random Forest Classifier
-with Logistic Regression as the meta-learner
+with Logistic Regression as the meta-learner achieving an Accuracy of 80.6% on the public test set.
 
 ## Project Structure
-spaceship-titanic/
-├── input/ # Folder containing dataset files
-│ ├── train.csv # Training data
-│ ├── test.csv # Test data
-├── notebooks/ # Jupyter notebooks for EDA and modeling
-│ ├── eda.ipynb # Exploratory Data Analysis
-├── src/ # Source code for preprocessing and modeling
-│ ├── config.py # Config Script
-│ ├── train.py # Model training script
-  ├── model_dispatcher.py # Model overviews
-  ├── run.sh # bash script for running model experiments
-│ └── create_folds.py # Script for generating CV
+
+spaceship_titanic/
+├── input/ # Data directory
+│ ├── train.csv # Training dataset
+│ ├── test.csv # Test dataset
+│ └── train_folds.csv # Training data with CV fold assignments
+├── src/ # Source code
+│ ├── config.py # Configuration settings (paths, etc.)
+│ ├── create_folds.py # Script for creating cross-validation folds
+│ ├── model_dispatcher.py # Model configurations and ensemble setups
+│ ├── preprocessing.py # Data preprocessing pipeline classes
+│ ├── train.py # Main training script
+│ └── run.sh # Bash script for running experiments
+├── notebooks/ # Jupyter notebooks
+│ └── eda.ipynb # Exploratory Data Analysis
+├── predictions/ # Model predictions
+│ └── predictions.csv # Final predictions on test set
 ├── requirements.txt # Python dependencies
-├── README.md # This file
-└── .gitignore # Files to ignore in Git
+└── README.md # Project documentation
 
-## Approach
-### Data Preprocessing:
 
-Handled missing values by imputing with mean/mode or using advanced techniques like KNN imputation.
+### Key Components Explained
 
-Encoded categorical variables using one-hot encoding or label encoding.
+#### Source Code (`src/`)
+- **config.py**: Contains configuration settings like file paths and model parameters
+- **create_folds.py**: Implements stratified k-fold cross-validation
+- **model_dispatcher.py**: Defines model architectures and ensemble configurations
+- **preprocessing.py**: Contains custom transformer classes for data preprocessing:
+  - HomePlanetImputer
+  - CabinImputer
+  - CryoSleepImputer
+  - SpendingImputer
+  - FeatureEngineer
+  - And more...
+- **train.py**: Main script for model training and evaluation
+- **run.sh**: Automation script for running multiple experiments
 
-Scaled numerical features for better model performance.
+#### Data (`input/`)
+- **train.csv**: Original training data
+- **test.csv**: Test data for final predictions
+- **train_folds.csv**: Training data split into cross-validation folds
 
-### Feature Engineering:
+#### Notebooks (`notebooks/`)
+- **eda.ipynb**: Exploratory Data Analysis notebook with visualizations and insights
 
-Extracted useful information from the Cabin column (e.g., deck, side).
-
-Created new features like FamilySize and IsAlone based on passenger groups.
-
-### Modeling:
-
-Experimented with various machine learning models, including Logistic Regression, Random Forest, Gradient Boosting, and XGBoost.
-
-Used cross-validation and hyperparameter tuning to optimize model performance.
-
-### Evaluation:
-
-Evaluated models using accuracy, precision, recall, and F1-score.
-
-Generated a submission file for the Kaggle competition.
-
-## Results
+#### Outputs (`predictions/`)
+- Contains model predictions and submission files
