@@ -81,4 +81,4 @@ spaceship_titanic/
 - **eda.ipynb**: Exploratory Data Analysis notebook with visualizations and insights
 
 #### Outputs (`predictions/`)
-- Contains model predictions and submission files
+- Contains model predictions and submission filess
