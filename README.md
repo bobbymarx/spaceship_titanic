@@ -6,6 +6,30 @@ This project tackles the Kaggle competition "Spaceship Titanic", achieving a pub
 ## Problem Description
 The Spaceship Titanic was an interstellar passenger liner launched a month ago. With almost 13,000 passengers on board, the vessel set out on its maiden voyage transporting emigrants from our solar system to three newly habitable exoplanets orbiting nearby stars. While rounding Alpha Centauri en route to its first destination—the torrid 55 Cancri E—the unwary vessel collided with a spacetime anomaly hidden within a dust cloud. Though the ship stayed intact, almost half of the passengers were transported to an alternate dimension!
 
+## Project Structure
+
+```bash
+spaceship_titanic/
+├── input/ # Data directory
+│ ├── train.csv # Training dataset
+│ ├── test.csv # Test dataset
+│ └── train_folds.csv # Training data with CV fold assignments
+├── src/ # Source code
+│ ├── config.py # Configuration settings (paths, etc.)
+│ ├── create_folds.py # Script for creating cross-validation folds
+│ ├── model_dispatcher.py # Model configurations and ensemble setups
+│ ├── preprocessing.py # Data preprocessing pipeline classes
+│ ├── train.py # Main training script
+│ └── run.sh # Bash script for running experiments
+├── notebooks/ # Jupyter notebooks
+│ └── eda.ipynb # Exploratory Data Analysis
+├── predictions/ # Model predictions
+│ └── predictions.csv # Final predictions on test set
+├── requirements.txt # Python dependencies
+└── README.md # Project documentation
+```
+
+
 ## Solution Approach
 
 ### Data Preprocessing
@@ -33,29 +57,6 @@ Stacking Ensemble combining:
 - XGBoost Classifier
 - Random Forest Classifier
 with Logistic Regression as the meta-learner achieving an Accuracy of 80.6% on the public test set.
-
-## Project Structure
-
-```bash
-spaceship_titanic/
-├── input/ # Data directory
-│ ├── train.csv # Training dataset
-│ ├── test.csv # Test dataset
-│ └── train_folds.csv # Training data with CV fold assignments
-├── src/ # Source code
-│ ├── config.py # Configuration settings (paths, etc.)
-│ ├── create_folds.py # Script for creating cross-validation folds
-│ ├── model_dispatcher.py # Model configurations and ensemble setups
-│ ├── preprocessing.py # Data preprocessing pipeline classes
-│ ├── train.py # Main training script
-│ └── run.sh # Bash script for running experiments
-├── notebooks/ # Jupyter notebooks
-│ └── eda.ipynb # Exploratory Data Analysis
-├── predictions/ # Model predictions
-│ └── predictions.csv # Final predictions on test set
-├── requirements.txt # Python dependencies
-└── README.md # Project documentation
-```
 
 
 ### Key Components Explained
