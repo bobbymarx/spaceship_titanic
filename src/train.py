@@ -28,7 +28,6 @@ def run(fold, model, test, search_type="random"):
 
     x_train=train_df.drop(["Transported"],axis=1)
     y_train=train_df.Transported.values
-    
 
     x_train, x_valid= processing(x_train, x_valid)
 
@@ -62,7 +61,7 @@ def run(fold, model, test, search_type="random"):
         }
     }
 
-    
+
 
     # Get base model
     base_model = model_dispatcher.models[model]
@@ -128,7 +127,7 @@ def run(fold, model, test, search_type="random"):
     else:
         output=pd.DataFrame({
             'PassengerId': valid_df['PassengerId'],
-            'Survived': preds
+            'Transported': preds
          })
         
         output.to_csv(os.path.join(config.Output_File, f"predictions.csv"), index=False)

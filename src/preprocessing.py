@@ -463,7 +463,7 @@ class DropUnwantedColumns(BaseEstimator, TransformerMixin):
         return self
     
     def transform(self, X):
-        return X.drop(columns=self.columns_to_drop)
+        return X.drop(columns=self.columns_to_drop, errors='ignore')
 
 
 age_imputer = SimpleImputer(strategy='median')
